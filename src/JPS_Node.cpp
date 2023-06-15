@@ -38,7 +38,7 @@ double cell_size;
 int max_iterations;
 int pad_size;
 double threshold;
-double inter_dest_threshold;
+int waypoint_num;
 bool is_dest_set;
 nav_msgs::Path waypoints;
 boost::shared_ptr<const nav_msgs::Odometry_<std::allocator<void> > > odom_msg;
@@ -74,7 +74,7 @@ JPSNodelet()
  n.param("max_iterations",max_iterations,500);
  n.param("pad_size",pad_size,1);
  n.param("threshold",threshold,1.0);
- n.param("inter_dest_threshold",inter_dest_threshold,0.4);
+ n.param("waypoint_num",waypoint_num,2);
  Trans_Matrix.setZero();
  inv_Trans_Matrix.setZero();
  offset_z = offset = int(map_size/2);
@@ -109,11 +109,11 @@ void JPSNodelet::find_free_node(int ***ogm,int &x, int &y, int &z, int max_scope
  int scope = 1;
  while (scope < max_scope)
  {
-	 for (int k = -scope; k <= scope; k = k + 2*scope)
+	 for (int i = -scope; i <= scope; i = i + 2*scope)
 	 {
 		 for (int j = -scope+1; j <= scope-1; j++)
 		 {
-			 for (int i = -scope+1; i <= scope-1; i++)
+			 for (int k = -scope+1; k <= scope-1; k++)
 			 {
 			  if (((x + i)>=0) && ((x + i)<=map_size-1) && ((y + j)>=0) && ((y + j)<=map_size-1) && ((z + k)>=0) && ((z + k)<=map_size-1))
 			  {
@@ -133,43 +133,43 @@ void JPSNodelet::find_free_node(int ***ogm,int &x, int &y, int &z, int max_scope
 	 {
 		 for (int j = -scope; j <= scope; j++)
 		 {
-       if (((x-scope)>=0) && ((y + j)>=0) && ((y + j)<=map_size-1) && ((z + k)>=0) && ((z + k)<=map_size-1))
+       if (((z-scope)>=0) && ((y + j)>=0) && ((y + j)<=map_size-1) && ((x + k)>=0) && ((x + k)<=map_size-1))
        {
-        if(ogm[x-scope][y+j][z+k] == 1)
+        if(ogm[x+k][y+j][z-scope] == 1)
         {
-           x -= scope;
+           x += k;
 			  	 y += j;
-			  	 z += k;
+			  	 z -= scope;
 			  	 return;
         }
        }
-       else if (((x + scope)<=map_size-1) && ((y + j)>=0) && ((y + j)<=map_size-1) && ((z + k)>=0) && ((z + k)<=map_size-1))
+       else if (((z + scope)<=map_size-1) && ((y + j)>=0) && ((y + j)<=map_size-1) && ((x + k)>=0) && ((x + k)<=map_size-1))
        {
-        if(ogm[x+scope][y+j][z+k] == 1)
+        if(ogm[x+k][y+j][z+scope] == 1)
         {
-           x += scope;
+           x += k;
 			  	 y += j;
-			  	 z += k;
+			  	 z += scope;
 			  	 return;
         }
        }
-       if (((x + j)>=0) && ((x + j)<=map_size-1) && ((y + scope)<=map_size-1) && ((z + k)>=0) && ((z + k)<=map_size-1))
+       if (((x + k)>=0) && ((x + k)<=map_size-1) && ((y + scope)<=map_size-1) && ((z + j)>=0) && ((z + j)<=map_size-1))
        {
-         if(ogm[x+j][y+scope][z+k] == 1)
+         if(ogm[x+k][y+scope][z+j] == 1)
         {
-           x += j;
+           x += k;
 			  	 y += scope;
-			  	 z += k;
+			  	 z += j;
 			  	 return;
         }
        }
-       if (((x + j)>=0) && ((x + j)<=map_size-1) && ((y - scope)>=0) && ((z + k)>=0) && ((z + k)<=map_size-1))
+       if (((x + k)>=0) && ((x + k)<=map_size-1) && ((y - scope)>=0) && ((z + j)>=0) && ((z + j)<=map_size-1))
        {
         if(ogm[x+j][y-scope][z+k] == 1)
         {
-           x += j;
+           x += k;
 			  	 y -= scope;
-			  	 z += k;
+			  	 z += j;
 			  	 return;
         }
 		   }
@@ -178,6 +178,7 @@ void JPSNodelet::find_free_node(int ***ogm,int &x, int &y, int &z, int max_scope
 	 scope += 1;
  }
  ROS_INFO("Unable to find a nearby empty node!!!\n");
+ is_dest_set = false;
  return;
 }
 
@@ -215,23 +216,29 @@ void JPSNodelet::Visualiser(vector <struct path_planning::JumpPointSearch::Node>
     waypoints.poses.clear();
     waypoints.header.stamp = ros::Time::now();
     int k, i;
-  for(k = rpath.size()-2,i = 0; (i<2 && k>=0); i++, k--)
+  for(k = rpath.size()-2,i = 0;k>=0; i++, k--)
 	 {geometry_msgs::Point p;
-		geometry_msgs::PoseStamped w;
-		w.header.frame_id = "world";
-		w.header.stamp = ros::Time::now();
 		Eigen::Vector4d vec_Drone_Frame((rpath[k].current_node_x - offset)*cell_size, (rpath[k].current_node_y - offset)*cell_size,(rpath[k].current_node_z - offset_z)*cell_size,1.0);
     Eigen::Vector4d vec_World_Frame = Trans_Matrix*vec_Drone_Frame; 
-		w.pose.position.x = p.x = vec_World_Frame(0);
-		w.pose.position.y = p.y = vec_World_Frame(1);
-		w.pose.position.z = p.z = vec_World_Frame(2);
+		p.x = vec_World_Frame(0);
+		p.y = vec_World_Frame(1);
+		p.z = vec_World_Frame(2);
+    if(i<waypoint_num)
+    {
+    geometry_msgs::PoseStamped w;
+    w.header.frame_id = "world";
+		w.header.stamp = ros::Time::now();
+    w.pose.position.x = vec_World_Frame(0);
+		w.pose.position.y = vec_World_Frame(1);
+		w.pose.position.z = vec_World_Frame(2); 
 		w.pose.orientation.x = 0.0;
 		w.pose.orientation.y = 0.0;
 		w.pose.orientation.z = 0.0;
 		w.pose.orientation.w = 1.0;
+    waypoints.poses.push_back(w);
+    }
 		points.points.push_back(p);
 		line_strip.points.push_back(p);
-		waypoints.poses.push_back(w);
    }
          marker_pub.publish(points);
          marker_pub.publish(line_strip);
@@ -288,6 +295,7 @@ void JPSNodelet::JPS_Publisher(int x_dest, int y_dest, int z_dest)
  if (sqrt(pow((Trans_Matrix(0,3) - x_dest),2) + pow((Trans_Matrix(1,3) - y_dest),2) + pow((Trans_Matrix(2,3) - z_dest),2)) < threshold)
  {
   ROS_INFO("Destination is within threshold. Publishing stopped");
+  is_dest_set = false;
   return;
  }
   int start[3] = {start_x,start_y,start_z};
