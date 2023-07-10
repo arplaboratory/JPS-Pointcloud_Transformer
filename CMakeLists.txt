@@ -70,6 +70,8 @@ add_message_files(
  add_service_files(
    FILES
    jps_service_message.srv
+   jps_waypoint_service.srv
+   
  )
 
 ## Generate actions in the 'action' folder

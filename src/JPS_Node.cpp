@@ -20,6 +20,7 @@
 #include<geometry_msgs/PoseStamped.h>
 #include<topic_tools/shape_shifter.h>
 #include "JPS/jps_service_message.h"
+#include "JPS/jps_waypoint_service.h"
 using namespace std;
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 static int counter = 0;
@@ -40,6 +41,7 @@ int pad_size;
 double threshold;
 int waypoint_num;
 bool is_dest_set;
+bool is_waypoint_set;
 nav_msgs::Path waypoints;
 boost::shared_ptr<const nav_msgs::Odometry_<std::allocator<void> > > odom_msg;
 boost::shared_ptr<const topic_tools::ShapeShifter> map_msg;
@@ -49,6 +51,7 @@ void find_free_node(int ***ogm,int &x, int &y, int &z, int max_scope);
 void JPS_Publisher(int x_dest, int y_dest, int z_dest);
 void Visualiser(vector <struct path_planning::JumpPointSearch::Node> rpath);
 bool service_callback(JPS::jps_service_message::Request &req, JPS::jps_service_message::Response &res);
+bool waypoint_service_callback(JPS::jps_waypoint_service::Request &req, JPS::jps_waypoint_service::Response &res);
 path_planning::JumpPointSearch jps;
 ros::NodeHandle n;
 ros::Publisher marker_pub;
@@ -56,6 +59,8 @@ ros::Publisher waypoint_pub;
 ros::Subscriber pc_sub;
 ros::Subscriber pose_sub;
 ros::ServiceServer service;
+ros::ServiceServer waypoint_service;
+nav_msgs::Path goal_waypoints;
 
 JPSNodelet()
 {//"/race2/odom_transform_nodelet/odomBinB0_from_transform"
@@ -63,12 +68,14 @@ JPSNodelet()
  odom_msg = NULL;
  map_msg = NULL;
  is_dest_set = false;
+ is_waypoint_set = false;
  n = ros::NodeHandle("/quadrotor/jps_server");
  marker_pub = n.advertise<visualization_msgs::Marker>("/JPS_Path", 1);
  waypoint_pub = n.advertise<nav_msgs::Path>("/quadrotor/waypoints",1);
  pose_sub = n.subscribe("/quadrotor/odom",1,&JPSNodelet::pose_callback,this);
  pc_sub = n.subscribe("/voxblox_node/occupied_nodes",1,&JPSNodelet::pointcloud_subscriberCallback,this);
- service = n.advertiseService("/JPS_Server",&JPSNodelet::service_callback,this);
+ service = n.advertiseService("/JPS_Server_single_waypoint",&JPSNodelet::service_callback,this);
+ waypoint_service = n.advertiseService("/JPS_Server_multiple_waypoints",&JPSNodelet::waypoint_service_callback,this);
  n.param("map_size",map_size,10);
  n.param("cell_size",cell_size,0.4);
  n.param("max_iterations",max_iterations,500);
@@ -312,16 +319,30 @@ void JPSNodelet::pointcloud_subscriberCallback(const topic_tools::ShapeShifter::
    return;
   }
   map_msg = msg;
-  if (!is_dest_set)
+  if (!(is_dest_set || is_waypoint_set))
   {return;}
+  if(is_waypoint_set && !goal_waypoints.poses.empty() && !is_dest_set)
+  {
+    geometry_msgs::PoseStamped waypoint = goal_waypoints.poses.front();
+    goal_waypoints.poses.erase(goal_waypoints.poses.begin());
+    x_dest = int(waypoint.pose.position.x);
+    y_dest = int(waypoint.pose.position.y);
+    z_dest = int(waypoint.pose.position.z);
+    ROS_INFO("Now moving to waypoint x: %d, y: %d, z: %d\n",x_dest,y_dest,z_dest);
+    is_dest_set = true;
+  }
   if (sqrt(pow((Trans_Matrix(0,3) - x_dest),2) + pow((Trans_Matrix(1,3) - y_dest),2) + pow((Trans_Matrix(2,3) - z_dest),2)) < threshold)
  {
-  ROS_INFO("Destination is within threshold. Publishing stopped");
   is_dest_set = false;
-  return;
+  if(goal_waypoints.poses.empty())
+  {
+    ROS_INFO("Final destination is within threshold. Path planning stopped");
+    is_waypoint_set = false;
+    return;
+  }
  }
  counter++;
- if(counter%5 != 1)
+ if(counter%5 != 1 || !is_dest_set)
  {return;}
   jps.clear_ogm();
   if (msg->getDataType() == "visualization_msgs/MarkerArray")
@@ -378,15 +399,44 @@ bool JPSNodelet::service_callback(JPS::jps_service_message::Request &req, JPS::j
     ROS_INFO("Did not receive Pointcloud information!!\n");
     return false;
   }
+  if(!req.start)
+  {
+    is_dest_set = false;
+    is_waypoint_set = false;
+    res.status = "Stopping Path planning. Clearing waypoint queue.\n";
+    goal_waypoints.poses.clear();
+    return true;
+  }
   x_dest = req.x;
   y_dest = req.y;
   z_dest  = req.z;
   is_dest_set = true;
+  is_waypoint_set = false;
   odom_msg = nullptr;
   map_msg = nullptr;
 
     res.status = "Received new destination coordinates!\n";
     return true;
+}
+
+bool JPSNodelet::waypoint_service_callback(JPS::jps_waypoint_service::Request &req, JPS::jps_waypoint_service::Response &res)
+{
+  if(!odom_msg)
+  {
+    ROS_INFO("Did not receive Odometry information!!\n");
+    return false;
+  }
+  if(!map_msg)
+  {
+    ROS_INFO("Did not receive Pointcloud information!!\n");
+    return false;
+  }
+  goal_waypoints = req.waypoint;
+  is_waypoint_set = true;
+  is_dest_set = false;
+  res.status = "Received new waypoints!\n";
+  return true;
+
 }
 
 
