@@ -172,7 +172,7 @@ void JPSNodelet::find_free_node(int ***ogm,int &x, int &y, int &z, int max_scope
        }
        if (((x + k)>=0) && ((x + k)<=map_size-1) && ((y - scope)>=0) && ((z + j)>=0) && ((z + j)<=map_size-1))
        {
-        if(ogm[x+j][y-scope][z+k] == 1)
+        if(ogm[x+k][y-scope][z+j] == 1)
         {
            x += k;
 			  	 y -= scope;
