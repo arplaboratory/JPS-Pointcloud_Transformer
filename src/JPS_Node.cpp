@@ -20,7 +20,6 @@
 #include<geometry_msgs/PoseStamped.h>
 #include<topic_tools/shape_shifter.h>
 #include "JPS/jps_service_message.h"
-#include "JPS/jps_waypoint_service.h"
 using namespace std;
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 static int counter = 0;
@@ -29,9 +28,9 @@ class JPSNodelet
 public:
 Eigen::Matrix4d Trans_Matrix;
 Eigen::Matrix4d inv_Trans_Matrix;
-int x_dest;
-int y_dest;
-int z_dest;
+double x_dest;
+double y_dest;
+double z_dest;
 int map_size;
 int offset;
 int offset_z;
@@ -47,19 +46,23 @@ boost::shared_ptr<const nav_msgs::Odometry_<std::allocator<void> > > odom_msg;
 boost::shared_ptr<const topic_tools::ShapeShifter> map_msg;
 void pointcloud_subscriberCallback(const topic_tools::ShapeShifter::ConstPtr& msg);
 void pose_callback(const nav_msgs::Odometry::ConstPtr& odom);
+void pose_publisher70Hz(const ros::TimerEvent& event); 
 void find_free_node(int ***ogm,int &x, int &y, int &z, int max_scope);
-void JPS_Publisher(int x_dest, int y_dest, int z_dest);
+void JPS_Publisher(double x_dest, double y_dest, double z_dest);
 void Visualiser(vector <struct path_planning::JumpPointSearch::Node> rpath);
 bool service_callback(JPS::jps_service_message::Request &req, JPS::jps_service_message::Response &res);
-bool waypoint_service_callback(JPS::jps_waypoint_service::Request &req, JPS::jps_waypoint_service::Response &res);
+void waypoint_callback(const nav_msgs::Path::ConstPtr& wp);
+bool check_waypoint(double x, double y, double z);
 path_planning::JumpPointSearch jps;
 ros::NodeHandle n;
 ros::Publisher marker_pub;
 ros::Publisher waypoint_pub;
+ros::Publisher pose_pub_70_Hz;
 ros::Subscriber pc_sub;
 ros::Subscriber pose_sub;
 ros::ServiceServer service;
-ros::ServiceServer waypoint_service;
+ros::Subscriber waypoint_sub;
+ros::Timer timer;
 nav_msgs::Path goal_waypoints;
 
 JPSNodelet()
@@ -75,13 +78,15 @@ JPSNodelet()
  pose_sub = n.subscribe("/quadrotor/odom",1,&JPSNodelet::pose_callback,this);
  pc_sub = n.subscribe("/voxblox_node/occupied_nodes",1,&JPSNodelet::pointcloud_subscriberCallback,this);
  service = n.advertiseService("/JPS_Server_single_waypoint",&JPSNodelet::service_callback,this);
- waypoint_service = n.advertiseService("/JPS_Server_multiple_waypoints",&JPSNodelet::waypoint_service_callback,this);
- n.param("map_size",map_size,10);
- n.param("cell_size",cell_size,0.4);
+ waypoint_sub = n.subscribe("/race/waypoints",1,&JPSNodelet::waypoint_callback,this);
+ pose_pub_70_Hz = n.advertise<nav_msgs::Odometry>("/race/odom",1);
+ n.param("map_size",map_size,20);
+ n.param("cell_size",cell_size,0.3);
  n.param("max_iterations",max_iterations,500);
- n.param("pad_size",pad_size,1);
- n.param("threshold",threshold,1.0);
+ n.param("pad_size",pad_size,0);
+ n.param("threshold",threshold,0.5);
  n.param("waypoint_num",waypoint_num,2);
+ timer = n.createTimer(ros::Duration(1.0/10.0), &JPSNodelet::pose_publisher70Hz,this);
  Trans_Matrix.setZero();
  inv_Trans_Matrix.setZero();
  offset_z = offset = int(map_size/2);
@@ -106,6 +111,30 @@ void JPSNodelet::pose_callback(const nav_msgs::Odometry::ConstPtr& odom)
  		  Rot_matrix(2,0),Rot_matrix(2,1),Rot_matrix(2,2),odom->pose.pose.position.z,
  		  0.0, 0.0, 0.0, 1.0;
  inv_Trans_Matrix = Trans_Matrix.inverse();
+}
+
+bool JPSNodelet::check_waypoint(double x, double y, double z)
+{
+ Eigen::Vector4d rel_(x,y,z,1.0);
+ rel_ = inv_Trans_Matrix*rel_;
+ int rel_x = int(round((rel_(0)/cell_size) + offset));
+ int rel_y = int(round((rel_(1)/cell_size) + offset));
+ int rel_z = int(round((rel_(2)/cell_size) + offset_z));
+ if ((rel_x>=0 && rel_x<=map_size-1)&&(rel_y>=0 && rel_y<=map_size-1)&&(rel_z>=0 && rel_z<=map_size-1))
+{
+	 if (jps.ogm[rel_x][rel_y][rel_z] == 1)
+		{
+		 return true;
+		}
+	 else
+		{
+		 return false;
+		}
+}
+ else
+	{
+	 return true;
+	}
 }
 
 void JPSNodelet::find_free_node(int ***ogm,int &x, int &y, int &z, int max_scope)
@@ -191,6 +220,7 @@ void JPSNodelet::find_free_node(int ***ogm,int &x, int &y, int &z, int max_scope
 
 void JPSNodelet::Visualiser(vector <struct path_planning::JumpPointSearch::Node> rpath)
 {
+    //ROS_INFO("In Visualizer\n");
     visualization_msgs::Marker points, line_strip;
     points.header.frame_id = line_strip.header.frame_id = "world";
     points.header.stamp = line_strip.header.stamp = ros::Time::now();
@@ -223,7 +253,7 @@ void JPSNodelet::Visualiser(vector <struct path_planning::JumpPointSearch::Node>
     waypoints.poses.clear();
     waypoints.header.stamp = ros::Time::now();
     int k, i;
-  for(k = rpath.size()-2,i = 0;k>=0; i++, k--)
+  for(k = rpath.size()-1,i = 0;k>=0; i++, k--)
 	 {geometry_msgs::Point p;
 		Eigen::Vector4d vec_Drone_Frame((rpath[k].current_node_x - offset)*cell_size, (rpath[k].current_node_y - offset)*cell_size,(rpath[k].current_node_z - offset_z)*cell_size,1.0);
     Eigen::Vector4d vec_World_Frame = Trans_Matrix*vec_Drone_Frame; 
@@ -232,17 +262,17 @@ void JPSNodelet::Visualiser(vector <struct path_planning::JumpPointSearch::Node>
 		p.z = vec_World_Frame(2);
     if(i<waypoint_num)
     {
-    geometry_msgs::PoseStamped w;
-    w.header.frame_id = "world";
+    		geometry_msgs::PoseStamped w;
+    		w.header.frame_id = "world";
 		w.header.stamp = ros::Time::now();
-    w.pose.position.x = vec_World_Frame(0);
+	    	w.pose.position.x = vec_World_Frame(0);
 		w.pose.position.y = vec_World_Frame(1);
 		w.pose.position.z = vec_World_Frame(2); 
 		w.pose.orientation.x = 0.0;
 		w.pose.orientation.y = 0.0;
 		w.pose.orientation.z = 0.0;
 		w.pose.orientation.w = 1.0;
-    waypoints.poses.push_back(w);
+    		waypoints.poses.push_back(w);
     }
 		points.points.push_back(p);
 		line_strip.points.push_back(p);
@@ -255,16 +285,14 @@ void JPSNodelet::Visualiser(vector <struct path_planning::JumpPointSearch::Node>
 }
 
 
-void JPSNodelet::JPS_Publisher(int x_dest, int y_dest, int z_dest)
+void JPSNodelet::JPS_Publisher(double x_dest, double y_dest, double z_dest)
 {
+ //ROS_INFO("In publisher\n");
  Eigen::Vector4d dest(x_dest,y_dest,z_dest,1);
  Eigen::Vector4d dest_rel = inv_Trans_Matrix*dest;
- int dest_rel_x = int(round(dest_rel(0)));
- int dest_rel_y = int(round(dest_rel(1)));
- int dest_rel_z = int(round(dest_rel(2)));
- dest_rel_x = dest_rel_x/cell_size + offset;
- dest_rel_y = dest_rel_y/cell_size + offset;
- dest_rel_z = dest_rel_z/cell_size + offset_z;
+ int dest_rel_x = int(round((dest_rel(0)/cell_size)+offset));
+ int dest_rel_y = int(round((dest_rel(1)/cell_size)+offset));
+ int dest_rel_z = int(round((dest_rel(2)/cell_size)+offset_z));
  int start_x = offset;
  int start_y = offset;
  int start_z = offset_z;
@@ -289,9 +317,9 @@ void JPSNodelet::JPS_Publisher(int x_dest, int y_dest, int z_dest)
   //ROS_INFO("Destination Node is an occupied node!! Finding nearby free node\n");
   //ROS_INFO("Before: %f, %f, %f \n",de(0), de(1),de(2));
   find_free_node(jps.ogm,dest_rel_x,dest_rel_y,dest_rel_z,map_size);
-  //Eigen::Vector4d da((dest_rel_x-offset)*cell_size, (dest_rel_y-offset)*cell_size,(dest_rel_z-offset_z)*cell_size,1.0);
-  //Eigen::Vector4d des = Trans_Matrix*da;
-  //ROS_INFO("After: %f, %f, %f \n",des(0), des(1),des(2));
+  Eigen::Vector4d da((dest_rel_x-offset)*cell_size, (dest_rel_y-offset)*cell_size,(dest_rel_z-offset_z)*cell_size,1.0);
+  Eigen::Vector4d des = Trans_Matrix*da;
+  ROS_INFO("After: %f, %f, %f \n",des(0), des(1),des(2));
 
  }
  if (jps.ogm[start_x][start_y][start_z] == 0)
@@ -299,14 +327,20 @@ void JPSNodelet::JPS_Publisher(int x_dest, int y_dest, int z_dest)
   find_free_node(jps.ogm,start_x,start_y,start_z,pad_size+3);
   //ROS_INFO("Current position is considered as an occupied node! Finding closest unoccupied node position to consider as Start node.\n");
  }
- if (sqrt(pow((Trans_Matrix(0,3) - x_dest),2) + pow((Trans_Matrix(1,3) - y_dest),2) + pow((Trans_Matrix(2,3) - z_dest),2)) < threshold)
+ if (sqrt(pow((start_x - dest_rel_x),2) + pow((start_y - dest_rel_y),2) + pow((start_z - dest_rel_z),2))*cell_size < threshold)
  {
-  ROS_INFO("Destination is within threshold. Publishing stopped");
+  //ROS_INFO("Destination is within threshold. Publishing stopped");
   is_dest_set = false;
   return;
  }
   int start[3] = {start_x,start_y,start_z};
   int target[3] = {dest_rel_x,dest_rel_y,dest_rel_z};
+  Eigen::Vector4d da0((start_x-offset)*cell_size, (start_y-offset)*cell_size,(start_z-offset_z)*cell_size,1.0);
+  Eigen::Vector4d des0 = Trans_Matrix*da0;
+  ROS_INFO("Start is: %f, %f, %f \n",des0(0), des0(1),des0(2));
+  Eigen::Vector4d da1((dest_rel_x-offset)*cell_size, (dest_rel_y-offset)*cell_size,(dest_rel_z-offset_z)*cell_size,1.0);
+  Eigen::Vector4d des1 = Trans_Matrix*da1;
+  ROS_INFO("Dest is: %f, %f, %f \n",des1(0), des1(1),des1(2));
   jps.Jump_Point_Search(start,target);
   Visualiser(jps.rpath);
 }
@@ -314,21 +348,29 @@ void JPSNodelet::JPS_Publisher(int x_dest, int y_dest, int z_dest)
 
 void JPSNodelet::pointcloud_subscriberCallback(const topic_tools::ShapeShifter::ConstPtr& msg)
 { 
+
+  if (!odom_msg)
+  {
+   return;
+  }
+
   if (!msg) {
   ROS_INFO("Did not receive pointcloud message!\n");
    return;
   }
+  //ROS_INFO("In pointcloud_subscriber beginning\n");
   map_msg = msg;
   if (!(is_dest_set || is_waypoint_set))
   {return;}
+  
   if(is_waypoint_set && !goal_waypoints.poses.empty() && !is_dest_set)
   {
     geometry_msgs::PoseStamped waypoint = goal_waypoints.poses.front();
     goal_waypoints.poses.erase(goal_waypoints.poses.begin());
-    x_dest = int(waypoint.pose.position.x);
-    y_dest = int(waypoint.pose.position.y);
-    z_dest = int(waypoint.pose.position.z);
-    ROS_INFO("Now moving to waypoint x: %d, y: %d, z: %d\n",x_dest,y_dest,z_dest);
+    x_dest = double(waypoint.pose.position.x);
+    y_dest = double(waypoint.pose.position.y);
+    z_dest = double(waypoint.pose.position.z);
+    ROS_INFO("Now moving to waypoint x: %f, y: %f, z: %f\n",x_dest,y_dest,z_dest);
     is_dest_set = true;
   }
   if (sqrt(pow((Trans_Matrix(0,3) - x_dest),2) + pow((Trans_Matrix(1,3) - y_dest),2) + pow((Trans_Matrix(2,3) - z_dest),2)) < threshold)
@@ -384,6 +426,11 @@ void JPSNodelet::pointcloud_subscriberCallback(const topic_tools::ShapeShifter::
     ROS_INFO("Callback message is not of type visualization_msgs::MarkerArray or sensor_msgs::PointCloud2. Unable to construct occupancy grid map!\n");
     return;
   }
+  if(!check_waypoint(x_dest, y_dest,z_dest))
+  {
+    is_dest_set = false;
+    return;
+  }
   JPS_Publisher(x_dest,y_dest,z_dest);
 }
 
@@ -407,9 +454,9 @@ bool JPSNodelet::service_callback(JPS::jps_service_message::Request &req, JPS::j
     goal_waypoints.poses.clear();
     return true;
   }
-  x_dest = req.x;
-  y_dest = req.y;
-  z_dest  = req.z;
+  x_dest = double(req.x);
+  y_dest = double(req.y);
+  z_dest = double(req.z);
   is_dest_set = true;
   is_waypoint_set = false;
   odom_msg = nullptr;
@@ -419,24 +466,33 @@ bool JPSNodelet::service_callback(JPS::jps_service_message::Request &req, JPS::j
     return true;
 }
 
-bool JPSNodelet::waypoint_service_callback(JPS::jps_waypoint_service::Request &req, JPS::jps_waypoint_service::Response &res)
+void JPSNodelet::waypoint_callback(const nav_msgs::Path::ConstPtr& wp)
 {
   if(!odom_msg)
   {
-    ROS_INFO("Did not receive Odometry information!!\n");
-    return false;
+    ROS_INFO("Did not receive Odometry information!!Ignoring waypoints!!\n");
+    return;
   }
   if(!map_msg)
   {
-    ROS_INFO("Did not receive Pointcloud information!!\n");
-    return false;
+    ROS_INFO("Did not receive Pointcloud information!!Ignoring waypoints!!\n");
+    return;
   }
-  goal_waypoints = req.waypoint;
+  goal_waypoints = *wp;
   is_waypoint_set = true;
   is_dest_set = false;
-  res.status = "Received new waypoints!\n";
-  return true;
+  ROS_INFO("Received new waypoints!\n");
+  return;
 
+}
+void JPSNodelet::pose_publisher70Hz(const ros::TimerEvent& event)
+{
+ if(odom_msg)
+ {
+  nav_msgs::Odometry odom70 = *odom_msg;
+  pose_pub_70_Hz.publish(odom70);
+ }
+ return;
 }
 
 
