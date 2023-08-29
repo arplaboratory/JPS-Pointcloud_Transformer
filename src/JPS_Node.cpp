@@ -43,6 +43,7 @@ bool is_dest_set;
 bool is_waypoint_set;
 float drone_velocity;
 float drone_vel_threshold;
+Eigen::Vector3d drone_vel;
 nav_msgs::Path waypoints;
 boost::shared_ptr<const nav_msgs::Odometry_<std::allocator<void> > > odom_msg;
 boost::shared_ptr<const topic_tools::ShapeShifter> map_msg;
@@ -87,7 +88,7 @@ JPSNodelet()
  n.param("max_iterations",max_iterations,500);
  n.param("pad_size",pad_size,0);
  n.param("threshold",threshold,0.5);
- n.param("waypoint_num",waypoint_num,2);
+ n.param("waypoint_num",waypoint_num,1);
  timer = n.createTimer(ros::Duration(1.0/10.0), &JPSNodelet::pose_publisher70Hz,this);
  Trans_Matrix.setZero();
  inv_Trans_Matrix.setZero();
@@ -114,7 +115,7 @@ void JPSNodelet::pose_callback(const nav_msgs::Odometry::ConstPtr& odom)
  		  Rot_matrix(2,0),Rot_matrix(2,1),Rot_matrix(2,2),odom->pose.pose.position.z,
  		  0.0, 0.0, 0.0, 1.0;
  inv_Trans_Matrix = Trans_Matrix.inverse();
- Eigen::Vector3d drone_vel(odom->twist.twist.linear.x,odom->twist.twist.linear.y,odom->twist.twist.linear.z); 
+ drone_vel = Eigen::Vector3d(odom->twist.twist.linear.x,odom->twist.twist.linear.y,odom->twist.twist.linear.z); 
  drone_velocity = sqrt(pow(drone_vel(0),2) + pow(drone_vel(1),2) + pow(drone_vel(2),2));
 }
 
@@ -254,12 +255,12 @@ void JPSNodelet::Visualiser(vector <struct path_planning::JumpPointSearch::Node>
     line_strip.color.b = 1.0;
     line_strip.color.a = 1.0;
     
-    if(drone_velocity <= drone_vel_threshold)
+    if(drone_vel(0) <= drone_vel_threshold && drone_vel(1) <= drone_vel_threshold)
     {
 	    waypoints.poses.clear();
 	    waypoints.header.stamp = ros::Time::now();
 	    int k, i;
-	  for(k = rpath.size()-1,i = 0;k>=0; i++, k--)
+	  for(k = rpath.size()-2,i = 0;k>=0; i++, k--)
 		 {geometry_msgs::Point p;
 			Eigen::Vector4d vec_Drone_Frame((rpath[k].current_node_x - offset)*cell_size, (rpath[k].current_node_y - offset)*cell_size,(rpath[k].current_node_z - offset_z)*cell_size,1.0);
 	    Eigen::Vector4d vec_World_Frame = Trans_Matrix*vec_Drone_Frame; 
@@ -334,7 +335,7 @@ void JPSNodelet::JPS_Publisher(double x_dest, double y_dest, double z_dest)
   find_free_node(jps.ogm,start_x,start_y,start_z,pad_size+3);
   //ROS_INFO("Current position is considered as an occupied node! Finding closest unoccupied node position to consider as Start node.\n");
  }
- if (sqrt(pow((start_x - dest_rel_x),2) + pow((start_y - dest_rel_y),2) + pow((start_z - dest_rel_z),2))*cell_size < threshold && drone_velocity <= drone_vel_threshold)
+ if (sqrt(pow((start_x - dest_rel_x),2) + pow((start_y - dest_rel_y),2) + pow((start_z - dest_rel_z),2))*cell_size < threshold)
  {
   //ROS_INFO("Destination is within threshold. Publishing stopped");
   is_dest_set = false;
@@ -380,7 +381,7 @@ void JPSNodelet::pointcloud_subscriberCallback(const topic_tools::ShapeShifter::
     ROS_INFO("Now moving to waypoint x: %f, y: %f, z: %f\n",x_dest,y_dest,z_dest);
     is_dest_set = true;
   }
-  if (sqrt(pow((Trans_Matrix(0,3) - x_dest),2) + pow((Trans_Matrix(1,3) - y_dest),2) + pow((Trans_Matrix(2,3) - z_dest),2)) < threshold && drone_velocity <= drone_vel_threshold)
+  if (sqrt(pow((Trans_Matrix(0,3) - x_dest),2) + pow((Trans_Matrix(1,3) - y_dest),2) + pow((Trans_Matrix(2,3) - z_dest),2)) < threshold)
  {
   is_dest_set = false;
   if(goal_waypoints.poses.empty())
