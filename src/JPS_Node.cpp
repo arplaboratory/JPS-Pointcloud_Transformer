@@ -81,41 +81,74 @@ public:
     is_dest_set = false;
     is_waypoint_set = false;
 
+    // Get node handle
     n = ros::NodeHandle("~"); 
+
+    // Initialize publishers
     marker_pub = n.advertise<visualization_msgs::Marker>("JPS_Path", 1);
     waypoint_pub = n.advertise<nav_msgs::Path>("waypoints", 1);
     pose_pub_70_Hz = n.advertise<nav_msgs::Odometry>("odom", 1);
 
+    // Initialize subscribers
     pose_sub = n.subscribe("odom", 1, &JPSNodelet::pose_callback, this);
     pc_sub = n.subscribe("voxblox_node/occupied_nodes", 1, &JPSNodelet::pointcloud_subscriberCallback, this);
     waypoint_sub = n.subscribe("waypoints", 1, &JPSNodelet::waypoint_callback, this);
 
+    // Initialize service
     service = n.advertiseService("JPS_Server_single_waypoint", &JPSNodelet::service_callback, this);
 
+    // Initialize parameters
+    // Get map size
     n.param("map_size", map_size, 20);
+    jps.set_mapsize(map_size);
+    offset_z = offset = int(map_size / 2);
+
+    // Get cell size for individual voxel
     n.param("cell_size", cell_size, 0.3);
+
+    // Get maximum number of iterations for JPS
     n.param("max_iterations", max_iterations, 500);
+    jps.set_max_iter(max_iterations);
+
+    // Get padding size for JPS
     n.param("pad_size", pad_size, 0);
+
+    // Get threshold for JPS
     n.param("threshold", threshold, 0.5);
+
+    // Get number of waypoints to be published
     n.param("waypoint_num", waypoint_num, 1);
 
+    // Initialize timer TODO:: Change the hard coded value of 10.0 to a parameter and change the naming of the 70 Hz
     timer = n.createTimer(ros::Duration(1.0 / 10.0), &JPSNodelet::pose_publisher70Hz, this);
+
     Trans_Matrix.setZero();
     inv_Trans_Matrix.setZero();
-    offset_z = offset = int(map_size / 2);
+
+    // TODO:: Change the frame_id to a parameter
     waypoints.header.frame_id = "world";
-    jps.set_mapsize(map_size);
-    jps.set_max_iter(max_iterations);
+
+    // TODO:: Change the hard coded value of 0.5 to a parameter
     drone_vel_threshold = 0.5;
   }
 };
+
 void JPSNodelet::pose_callback(const nav_msgs::Odometry::ConstPtr &odom)
 {
   odom_msg = odom;
+
+  // Obtain the Rotation Matrix 
   Eigen::Quaterniond q(odom->pose.pose.orientation.x, odom->pose.pose.orientation.y, odom->pose.pose.orientation.z, odom->pose.pose.orientation.w);
   q.normalize();
   Eigen::Matrix3d Rot_matrix;
   Rot_matrix = q.toRotationMatrix();
+
+  // Obtain the drone velocity
+  drone_vel = Eigen::Vector3d(odom->twist.twist.linear.x, odom->twist.twist.linear.y, odom->twist.twist.linear.z);
+
+  // TODO:: maybe change the drone_velocity to drone_speed to avoid confusion from drone_vel
+  drone_velocity = sqrt(pow(drone_vel(0), 2) + pow(drone_vel(1), 2) + pow(drone_vel(2), 2));
+
   offset_z = int(round(odom->pose.pose.position.z / cell_size));
   if (offset_z > offset)
   {
@@ -126,8 +159,7 @@ void JPSNodelet::pose_callback(const nav_msgs::Odometry::ConstPtr &odom)
       Rot_matrix(2, 0), Rot_matrix(2, 1), Rot_matrix(2, 2), odom->pose.pose.position.z,
       0.0, 0.0, 0.0, 1.0;
   inv_Trans_Matrix = Trans_Matrix.inverse();
-  drone_vel = Eigen::Vector3d(odom->twist.twist.linear.x, odom->twist.twist.linear.y, odom->twist.twist.linear.z);
-  drone_velocity = sqrt(pow(drone_vel(0), 2) + pow(drone_vel(1), 2) + pow(drone_vel(2), 2));
+
 }
 
 bool JPSNodelet::check_waypoint(double x, double y, double z)
