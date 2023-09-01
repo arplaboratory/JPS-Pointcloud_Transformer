@@ -81,7 +81,6 @@ public:
     is_dest_set = false;
     is_waypoint_set = false;
 
-    //n = ros::NodeHandle("/quadrotor/jps_server");
     n = ros::NodeHandle("~"); 
     marker_pub = n.advertise<visualization_msgs::Marker>("JPS_Path", 1);
     waypoint_pub = n.advertise<nav_msgs::Path>("waypoints", 1);
