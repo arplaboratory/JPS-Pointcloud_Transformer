@@ -1,89 +1,91 @@
-#include<iostream>
-#include<stdio.h>
-#include<cstdlib>
-#include<cmath>
-#include<vector>
+#include <iostream>
+#include <stdio.h>
+#include <cstdlib>
+#include <cmath>
+#include <vector>
 #include "float.h"
 #include "JPS/path_planning/JumpPointSearch.h"
 
 using namespace std;
 
-namespace path_planning {
+namespace path_planning
+{
 
-JumpPointSearch::JumpPointSearch()
-{
- ogm = nullptr;
-}
-
-JumpPointSearch::~JumpPointSearch()
-{
-if(ogm != nullptr)
-{
-for (int i = 0; i< ogm_size; i++)
- {
-  for (int j = 0; j< ogm_size; j++)
-  {
-   delete[] ogm[i][j];
-  }
-  delete[] ogm[i];
- } 
- delete[] ogm;
-}
-}
-
-void JumpPointSearch::clear_ogm()
-{
-	for(int i = 0; i < ogm_size; i++)
-	for(int j = 0; j < ogm_size; j++)
-	for(int k = 0; k < ogm_size; k++)
-	ogm[i][j][k] = 1;
-}
-
-void JumpPointSearch::set_mapsize(int map_size)
-{
- ogm_size = map_size;
- ogm = new int**[ogm_size];
- for (int i = 0; i < ogm_size; i++)
- {ogm[i] = new int*[ogm_size];
-  for (int j = 0; j < ogm_size; j++)
-  {ogm[i][j] = new int[ogm_size];
-   for (int k = 0; k < ogm_size; k++)
-   {
-    ogm[i][j][k] = 1;
-   }
-  }
- }
-}
-
-void JumpPointSearch::set_max_iter(int max_iter)
-{
-	max_iterations = max_iter;
-}
-
-void JumpPointSearch::padding(int pad_size,int x, int y, int z)
-{
-	ogm[x][y][z] = 0;
-	if (pad_size <= 0)
+	JumpPointSearch::JumpPointSearch()
 	{
-		return;
+		ogm = nullptr;
 	}
-	for (int i = -pad_size; i<=pad_size; i++)
-	for (int j = -pad_size; j<=pad_size; j++)
-	for (int k = -pad_size; k<=pad_size; k++)
+
+	JumpPointSearch::~JumpPointSearch()
 	{
-		if (((x+i >=0 ) && (x+i < ogm_size)) && ((y+j >=0 ) && (y+j < ogm_size)) && ((z+k >=0 ) && (z+k < ogm_size)))
+		if (ogm != nullptr)
 		{
-			ogm[x+i][y+j][z+k] = 0;
+			for (int i = 0; i < ogm_size; i++)
+			{
+				for (int j = 0; j < ogm_size; j++)
+				{
+					delete[] ogm[i][j];
+				}
+				delete[] ogm[i];
+			}
+			delete[] ogm;
 		}
 	}
-	
-	
-return;
-}
 
-int JumpPointSearch::check_search(int x, int y, int z)
-	{	
-	
+	void JumpPointSearch::clear_ogm()
+	{
+		for (int i = 0; i < ogm_size; i++)
+			for (int j = 0; j < ogm_size; j++)
+				for (int k = 0; k < ogm_size; k++)
+					ogm[i][j][k] = 1;
+	}
+
+	void JumpPointSearch::set_mapsize(int map_size)
+	{
+		ogm_size = map_size;
+		ogm = new int **[ogm_size];
+		for (int i = 0; i < ogm_size; i++)
+		{
+			ogm[i] = new int *[ogm_size];
+			for (int j = 0; j < ogm_size; j++)
+			{
+				ogm[i][j] = new int[ogm_size];
+				for (int k = 0; k < ogm_size; k++)
+				{
+					ogm[i][j][k] = 1;
+				}
+			}
+		}
+	}
+
+	void JumpPointSearch::set_max_iter(int max_iter)
+	{
+		max_iterations = max_iter;
+	}
+
+	void JumpPointSearch::padding(int pad_size, int x, int y, int z)
+	{
+		ogm[x][y][z] = 0;
+		if (pad_size <= 0)
+		{
+			return;
+		}
+		for (int i = -pad_size; i <= pad_size; i++)
+			for (int j = -pad_size; j <= pad_size; j++)
+				for (int k = -pad_size; k <= pad_size; k++)
+				{
+					if (((x + i >= 0) && (x + i < ogm_size)) && ((y + j >= 0) && (y + j < ogm_size)) && ((z + k >= 0) && (z + k < ogm_size)))
+					{
+						ogm[x + i][y + j][z + k] = 0;
+					}
+				}
+
+		return;
+	}
+
+	int JumpPointSearch::check_search(int x, int y, int z)
+	{
+
 		int index = -1;
 		for (int i = 0; i < node_array.size(); i++)
 		{
@@ -129,9 +131,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 		int x2;
 		int f;
 		Node temp_node{};
-		if ((y_node < 0 || y_node > map_y) ||(z_node < 0 || z_node > map_z))
+		if ((y_node < 0 || y_node > map_y) || (z_node < 0 || z_node > map_z))
 		{
-		return i;
+			return i;
 		}
 		while (true)
 		{
@@ -179,9 +181,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						i += 1;
 						flag = 1;
 					}
-					else if(f != -1)
+					else if (f != -1)
 					{
-						if(X_dist + dist + 1.414 + double(sqrt((x2 - x_dest) * (x2 - x_dest) + ((y_node - 1) - y_dest) * ((y_node - 1) - y_dest) + (z_node - z_dest) * (z_node - z_dest))) < node_array[f].dist_heur)
+						if (X_dist + dist + 1.414 + double(sqrt((x2 - x_dest) * (x2 - x_dest) + ((y_node - 1) - y_dest) * ((y_node - 1) - y_dest) + (z_node - z_dest) * (z_node - z_dest))) < node_array[f].dist_heur)
 						{
 							node_array[f].parent_node_x = x1;
 							node_array[f].parent_node_y = y_node;
@@ -214,9 +216,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						i += 1;
 						flag = 1;
 					}
-					else if(f != -1)
+					else if (f != -1)
 					{
-						if(X_dist + dist + 1.414 + double(sqrt((x2 - x_dest) * (x2 - x_dest) + ((y_node + 1) - y_dest) * ((y_node + 1) - y_dest) + (z_node - z_dest) * (z_node - z_dest))) < node_array[f].dist_heur)
+						if (X_dist + dist + 1.414 + double(sqrt((x2 - x_dest) * (x2 - x_dest) + ((y_node + 1) - y_dest) * ((y_node + 1) - y_dest) + (z_node - z_dest) * (z_node - z_dest))) < node_array[f].dist_heur)
 						{
 							node_array[f].parent_node_x = x1;
 							node_array[f].parent_node_y = y_node;
@@ -249,9 +251,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						i += 1;
 						flag = 1;
 					}
-					else if(f != -1)
+					else if (f != -1)
 					{
-						if(X_dist + dist + 1.414 + double(sqrt((x2 - x_dest) * (x2 - x_dest) + ((z_node - 1) - z_dest) * ((z_node - 1) - z_dest) + (y_node - y_dest) * (y_node - y_dest))) < node_array[f].dist_heur)
+						if (X_dist + dist + 1.414 + double(sqrt((x2 - x_dest) * (x2 - x_dest) + ((z_node - 1) - z_dest) * ((z_node - 1) - z_dest) + (y_node - y_dest) * (y_node - y_dest))) < node_array[f].dist_heur)
 						{
 							node_array[f].parent_node_x = x1;
 							node_array[f].parent_node_y = y_node;
@@ -284,9 +286,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						i += 1;
 						flag = 1;
 					}
-					else if(f != -1)
+					else if (f != -1)
 					{
-						if( X_dist + dist + 1.414 + double(sqrt((x2 - x_dest) * (x2 - x_dest) + ((z_node + 1) - z_dest) * ((z_node + 1) - z_dest) + (y_node - y_dest) * (y_node - y_dest))) < node_array[f].dist_heur)
+						if (X_dist + dist + 1.414 + double(sqrt((x2 - x_dest) * (x2 - x_dest) + ((z_node + 1) - z_dest) * ((z_node + 1) - z_dest) + (y_node - y_dest) * (y_node - y_dest))) < node_array[f].dist_heur)
 						{
 							node_array[f].parent_node_x = x1;
 							node_array[f].parent_node_y = y_node;
@@ -317,21 +319,20 @@ int JumpPointSearch::check_search(int x, int y, int z)
 					i += 1;
 					flag = 0;
 				}
-				else if(f != -1)
+				else if (f != -1)
+				{
+					if (X_dist + dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + ((y_node)-y_dest) * ((y_node)-y_dest) + (z_node - z_dest) * (z_node - z_dest))) < node_array[f].dist_heur)
 					{
-						if( X_dist + dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + ((y_node)-y_dest) * ((y_node)-y_dest) + (z_node - z_dest) * (z_node - z_dest))) < node_array[f].dist_heur)
-						{
-							node_array[f].parent_node_x = x_node;
-							node_array[f].parent_node_y = y_node;
-							node_array[f].parent_node_z = z_node;
-							node_array[f].dist_start = dist + X_dist;
-							node_array[f].dist_dest = double(sqrt((x1 - x_dest) * (x1 - x_dest) + ((y_node)-y_dest) * ((y_node)-y_dest) + (z_node - z_dest) * (z_node - z_dest)));
-							node_array[f].dist_heur = X_dist + dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + ((y_node)-y_dest) * ((y_node)-y_dest) + (z_node - z_dest) * (z_node - z_dest)));
-							flag = 0;
-						}
+						node_array[f].parent_node_x = x_node;
+						node_array[f].parent_node_y = y_node;
+						node_array[f].parent_node_z = z_node;
+						node_array[f].dist_start = dist + X_dist;
+						node_array[f].dist_dest = double(sqrt((x1 - x_dest) * (x1 - x_dest) + ((y_node)-y_dest) * ((y_node)-y_dest) + (z_node - z_dest) * (z_node - z_dest)));
+						node_array[f].dist_heur = X_dist + dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + ((y_node)-y_dest) * ((y_node)-y_dest) + (z_node - z_dest) * (z_node - z_dest)));
+						flag = 0;
 					}
+				}
 			}
-
 		}
 		return i;
 	}
@@ -356,9 +357,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 		int y2;
 		int f;
 		Node temp_node{};
-		if ((x_node < 0 || x_node > map_x) ||(z_node < 0 || z_node > map_z))
+		if ((x_node < 0 || x_node > map_x) || (z_node < 0 || z_node > map_z))
 		{
-		return i;
+			return i;
 		}
 		while (true)
 		{
@@ -407,9 +408,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						i += 1;
 						flag = 1;
 					}
-					else if(f != -1)
+					else if (f != -1)
 					{
-						if( Y_dist + dist + 1.414 + double(sqrt(((x_node - 1) - x_dest) * ((x_node - 1) - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z_node - z_dest) * (z_node - z_dest))) < node_array[f].dist_heur)
+						if (Y_dist + dist + 1.414 + double(sqrt(((x_node - 1) - x_dest) * ((x_node - 1) - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z_node - z_dest) * (z_node - z_dest))) < node_array[f].dist_heur)
 						{
 							node_array[f].parent_node_x = x_node;
 							node_array[f].parent_node_y = y1;
@@ -442,9 +443,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						i += 1;
 						flag = 1;
 					}
-					else if(f != -1)
+					else if (f != -1)
 					{
-						if(Y_dist + dist + 1.414 + double(sqrt(((x_node + 1) - x_dest) * ((x_node + 1) - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z_node - z_dest) * (z_node - z_dest))) < node_array[f].dist_heur)
+						if (Y_dist + dist + 1.414 + double(sqrt(((x_node + 1) - x_dest) * ((x_node + 1) - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z_node - z_dest) * (z_node - z_dest))) < node_array[f].dist_heur)
 						{
 							node_array[f].parent_node_x = x_node;
 							node_array[f].parent_node_y = y1;
@@ -477,9 +478,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						i += 1;
 						flag = 1;
 					}
-					else if(f != -1)
+					else if (f != -1)
 					{
-						if(Y_dist + dist + 1.414 + double(sqrt(((z_node - 1) - z_dest) * ((z_node - 1) - z_dest) + (y2 - y_dest) * (y2 - y_dest) + (x_node - x_dest) * (x_node - x_dest))) < node_array[f].dist_heur)
+						if (Y_dist + dist + 1.414 + double(sqrt(((z_node - 1) - z_dest) * ((z_node - 1) - z_dest) + (y2 - y_dest) * (y2 - y_dest) + (x_node - x_dest) * (x_node - x_dest))) < node_array[f].dist_heur)
 						{
 							node_array[f].parent_node_x = x_node;
 							node_array[f].parent_node_y = y1;
@@ -512,9 +513,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						i += 1;
 						flag = 1;
 					}
-					else if(f != -1)
+					else if (f != -1)
 					{
-						if(Y_dist + dist + 1.414 + double(sqrt(((z_node + 1) - z_dest) * ((z_node + 1) - z_dest) + (y2 - y_dest) * (y2 - y_dest) + (x_node - x_dest) * (x_node - x_dest))) < node_array[f].dist_heur)
+						if (Y_dist + dist + 1.414 + double(sqrt(((z_node + 1) - z_dest) * ((z_node + 1) - z_dest) + (y2 - y_dest) * (y2 - y_dest) + (x_node - x_dest) * (x_node - x_dest))) < node_array[f].dist_heur)
 						{
 							node_array[f].parent_node_x = x_node;
 							node_array[f].parent_node_y = y1;
@@ -545,27 +546,26 @@ int JumpPointSearch::check_search(int x, int y, int z)
 					i += 1;
 					flag = 0;
 				}
-				else if(f != -1)
+				else if (f != -1)
+				{
+					if (Y_dist + dist + double(sqrt((x_node - x_dest) * (x_node - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z_node - z_dest) * (z_node - z_dest))) < node_array[f].dist_heur)
 					{
-						if(Y_dist + dist + double(sqrt((x_node - x_dest) * (x_node - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z_node - z_dest) * (z_node - z_dest))) < node_array[f].dist_heur)
-						{
-							node_array[f].parent_node_x = x_node;
-							node_array[f].parent_node_y = y_node;
-							node_array[f].parent_node_z = z_node;
-							node_array[f].dist_start = dist + Y_dist;
-							node_array[f].dist_dest = double(sqrt((x_node - x_dest) * (x_node - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z_node - z_dest) * (z_node - z_dest)));
-							node_array[f].dist_heur = Y_dist + dist + double(sqrt((x_node - x_dest) * (x_node - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z_node - z_dest) * (z_node - z_dest)));
-							flag = 0;
-						}
+						node_array[f].parent_node_x = x_node;
+						node_array[f].parent_node_y = y_node;
+						node_array[f].parent_node_z = z_node;
+						node_array[f].dist_start = dist + Y_dist;
+						node_array[f].dist_dest = double(sqrt((x_node - x_dest) * (x_node - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z_node - z_dest) * (z_node - z_dest)));
+						node_array[f].dist_heur = Y_dist + dist + double(sqrt((x_node - x_dest) * (x_node - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z_node - z_dest) * (z_node - z_dest)));
+						flag = 0;
 					}
+				}
 			}
-
 		}
 		return i;
 	}
 
 	int JumpPointSearch::search_z(int x, int y, int z, int xdest, int ydest, int zdest, int z_dist, double distance, int node_array_index)
-	{	
+	{
 		int x_node = x;
 		int y_node = y;
 		int z_node = z;
@@ -584,9 +584,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 		int z2;
 		int f;
 		Node temp_node{};
-		if ((y_node < 0 || y_node > map_y) ||(x_node < 0 || x_node > map_x))
+		if ((y_node < 0 || y_node > map_y) || (x_node < 0 || x_node > map_x))
 		{
-		return i;
+			return i;
 		}
 		while (true)
 		{
@@ -598,7 +598,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 			}
 			g = ogm[x_node][y_node][z1];
 			if (g == 0)
-				{break;}
+			{
+				break;
+			}
 			if (x_node == x_dest && y_node == y_dest && z1 == z_dest)
 			{
 				temp_node.current_node_x = x_node;
@@ -618,7 +620,7 @@ int JumpPointSearch::check_search(int x, int y, int z)
 			if ((x_node - 1 >= 0) && (z2 >= 0) && (z2 < map_z))
 			{
 				if (ogm[x_node - 1][y_node][z1] == 0 && ogm[x_node - 1][y_node][z2] != 0)
-				{	
+				{
 					f = check_search(x_node - 1, y_node, z2);
 					if (f == -1)
 					{
@@ -635,9 +637,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						i += 1;
 						flag = 1;
 					}
-					else if(f != -1)
+					else if (f != -1)
 					{
-						if(Z_dist + dist + 1.414 + double(sqrt(((x_node - 1) - x_dest) * ((x_node - 1) - x_dest) + (z2 - z_dest) * (z2 - z_dest) + (y_node - y_dest) * (y_node - y_dest))) < node_array[f].dist_heur)
+						if (Z_dist + dist + 1.414 + double(sqrt(((x_node - 1) - x_dest) * ((x_node - 1) - x_dest) + (z2 - z_dest) * (z2 - z_dest) + (y_node - y_dest) * (y_node - y_dest))) < node_array[f].dist_heur)
 						{
 							node_array[f].parent_node_x = x_node;
 							node_array[f].parent_node_y = y_node;
@@ -670,9 +672,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						i += 1;
 						flag = 1;
 					}
-					else if(f != -1)
+					else if (f != -1)
 					{
-						if(Z_dist + dist + 1.414 + double(sqrt(((x_node + 1) - x_dest) * ((x_node + 1) - x_dest) + (z2 - z_dest) * (z2 - z_dest) + (y_node - y_dest) * (y_node - y_dest))) < node_array[f].dist_heur)
+						if (Z_dist + dist + 1.414 + double(sqrt(((x_node + 1) - x_dest) * ((x_node + 1) - x_dest) + (z2 - z_dest) * (z2 - z_dest) + (y_node - y_dest) * (y_node - y_dest))) < node_array[f].dist_heur)
 						{
 							node_array[f].parent_node_x = x_node;
 							node_array[f].parent_node_y = y_node;
@@ -705,9 +707,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						i += 1;
 						flag = 1;
 					}
-					else if(f != -1)
+					else if (f != -1)
 					{
-						if(Z_dist + dist + 1.414 + double(sqrt(((y_node - 1) - y_dest) * ((y_node - 1) - y_dest) + (z2 - z_dest) * (z2 - z_dest) + (x_node - x_dest) * (x_node - x_dest))) < node_array[f].dist_heur)
+						if (Z_dist + dist + 1.414 + double(sqrt(((y_node - 1) - y_dest) * ((y_node - 1) - y_dest) + (z2 - z_dest) * (z2 - z_dest) + (x_node - x_dest) * (x_node - x_dest))) < node_array[f].dist_heur)
 						{
 							node_array[f].parent_node_x = x_node;
 							node_array[f].parent_node_y = y_node;
@@ -740,9 +742,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						i += 1;
 						flag = 1;
 					}
-					else if(f != -1)
+					else if (f != -1)
 					{
-						if(Z_dist + dist + 1.414 + double(sqrt(((y_node + 1) - y_dest) * ((y_node + 1) - y_dest) + (z2 - z_dest) * (z2 - z_dest) + (x_node - x_dest) * (x_node - x_dest))) < node_array[f].dist_heur)
+						if (Z_dist + dist + 1.414 + double(sqrt(((y_node + 1) - y_dest) * ((y_node + 1) - y_dest) + (z2 - z_dest) * (z2 - z_dest) + (x_node - x_dest) * (x_node - x_dest))) < node_array[f].dist_heur)
 						{
 							node_array[f].parent_node_x = x_node;
 							node_array[f].parent_node_y = y_node;
@@ -773,21 +775,20 @@ int JumpPointSearch::check_search(int x, int y, int z)
 					i += 1;
 					flag = 0;
 				}
-				else if(f != -1)
+				else if (f != -1)
+				{
+					if (Z_dist + dist + double(sqrt((x_node - x_dest) * (x_node - x_dest) + (z1 - z_dest) * (z1 - z_dest) + (y_node - y_dest) * (y_node - y_dest))) < node_array[f].dist_heur)
 					{
-						if(Z_dist + dist + double(sqrt((x_node - x_dest) * (x_node - x_dest) + (z1 - z_dest) * (z1 - z_dest) + (y_node - y_dest) * (y_node - y_dest))) < node_array[f].dist_heur)
-						{
-							node_array[f].parent_node_x = x_node;
-							node_array[f].parent_node_y = y_node;
-							node_array[f].parent_node_z = z_node;
-							node_array[f].dist_start = dist + Z_dist;
-							node_array[f].dist_dest = double(sqrt((x_node - x_dest) * (x_node - x_dest) + (z1 - z_dest) * (z1 - z_dest) + (y_node - y_dest) * (y_node - y_dest)));
-							node_array[f].dist_heur = Z_dist + dist + double(sqrt((x_node - x_dest) * (x_node - x_dest) + (z1 - z_dest) * (z1 - z_dest) + (y_node - y_dest) * (y_node - y_dest)));
-							flag = 0;
-						}
+						node_array[f].parent_node_x = x_node;
+						node_array[f].parent_node_y = y_node;
+						node_array[f].parent_node_z = z_node;
+						node_array[f].dist_start = dist + Z_dist;
+						node_array[f].dist_dest = double(sqrt((x_node - x_dest) * (x_node - x_dest) + (z1 - z_dest) * (z1 - z_dest) + (y_node - y_dest) * (y_node - y_dest)));
+						node_array[f].dist_heur = Z_dist + dist + double(sqrt((x_node - x_dest) * (x_node - x_dest) + (z1 - z_dest) * (z1 - z_dest) + (y_node - y_dest) * (y_node - y_dest)));
+						flag = 0;
 					}
+				}
 			}
-
 		}
 		return i;
 	}
@@ -821,7 +822,7 @@ int JumpPointSearch::check_search(int x, int y, int z)
 			y1 += y_dist;
 			z1 += z_dist;
 			diag_dist = diag_dist + 1.414;
-			if ((x1<0 || x1>=map_x) || (y1<0 || y1>=map_y) || (z1<0 || z1>=map_z))
+			if ((x1 < 0 || x1 >= map_x) || (y1 < 0 || y1 >= map_y) || (z1 < 0 || z1 >= map_z))
 				break;
 			if (ogm[x1][y1][z1] == 0)
 				break;
@@ -848,7 +849,7 @@ int JumpPointSearch::check_search(int x, int y, int z)
 			flag1 = 0;
 			if (z_dist == 0)
 			{
-				if ((y2 >= 0 && y2 < map_y) && ((x1 - x_dist >=0) && (x1 - x_dist < map_x)))
+				if ((y2 >= 0 && y2 < map_y) && ((x1 - x_dist >= 0) && (x1 - x_dist < map_x)))
 				{
 					if ((ogm[x1 - x_dist][y1][z1] == 0) && (ogm[x1 - x_dist][y2][z1] != 0))
 					{
@@ -868,9 +869,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 							node_array.push_back(temp_node);
 							flag = 1;
 						}
-						else if(f != -1)
+						else if (f != -1)
 						{
-						if(double(sqrt(((x1 - x_dist) - x_dest) * (x1 - x_dist - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - z_dest) * (z1 - z_dest))) + dist + diag_dist_one_step < node_array[f].dist_heur)
+							if (double(sqrt(((x1 - x_dist) - x_dest) * (x1 - x_dist - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - z_dest) * (z1 - z_dest))) + dist + diag_dist_one_step < node_array[f].dist_heur)
 							{
 								node_array[f].parent_node_x = x1;
 								node_array[f].parent_node_y = y1;
@@ -883,7 +884,7 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						}
 					}
 				}
-				if ((x2 >= 0 && x2 < map_x) && ((y1 - y_dist >=0) && (y1 - y_dist < map_y)))
+				if ((x2 >= 0 && x2 < map_x) && ((y1 - y_dist >= 0) && (y1 - y_dist < map_y)))
 				{
 					if ((ogm[x1][y1 - y_dist][z1] == 0) && ogm[x2][y1 - y_dist][z1] != 0)
 					{
@@ -903,9 +904,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 							i += 1;
 							flag = 1;
 						}
-						else if(f != -1)
+						else if (f != -1)
 						{
-						if(double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - y_dist - y_dest) * (y1 - y_dist - y_dest) + (z1 - z_dest) * (z1 - z_dest))) + dist + diag_dist_one_step < node_array[f].dist_heur)
+							if (double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - y_dist - y_dest) * (y1 - y_dist - y_dest) + (z1 - z_dest) * (z1 - z_dest))) + dist + diag_dist_one_step < node_array[f].dist_heur)
 							{
 								node_array[f].parent_node_x = x1;
 								node_array[f].parent_node_y = y1;
@@ -918,83 +919,83 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						}
 					}
 				}
-				if ((x2>=0 && x2 < map_x) && (y2>=0 && y2<map_y))
+				if ((x2 >= 0 && x2 < map_x) && (y2 >= 0 && y2 < map_y))
 				{
 					if (z1 + 1 < map_z)
 					{
-					 if (ogm[x1][y1][z1+1] == 0 && ogm[x2][y2][z1+1] != 0)
-					 {
-					  f = check_search(x2,y2,z1+1);
-					  if (f == -1)
-					  {
-					   		temp_node.current_node_x = x2;
-							temp_node.current_node_y = y2;
-							temp_node.current_node_z = z1 + 1;
-							temp_node.parent_node_x = x1;
-							temp_node.parent_node_y = y1;
-							temp_node.parent_node_z = z1;
-							temp_node.dist_start = dist + diag_dist_one_step + 0.318;
-							temp_node.dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 + 1 - z_dest) * (z1 + 1 - z_dest)));
-							temp_node.dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 + 1 - z_dest) * (z1 + 1 - z_dest))) + dist + diag_dist_one_step + 0.318;
-							node_array.push_back(temp_node);
-							i += 1;
-							flag = 1;
-					  }
-					  else if(f != -1)
+						if (ogm[x1][y1][z1 + 1] == 0 && ogm[x2][y2][z1 + 1] != 0)
 						{
-						if(double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 + 1 - z_dest) * (z1 + 1 - z_dest))) + dist + diag_dist_one_step + 0.318 < node_array[f].dist_heur)
+							f = check_search(x2, y2, z1 + 1);
+							if (f == -1)
 							{
-								node_array[f].parent_node_x = x1;
-								node_array[f].parent_node_y = y1;
-								node_array[f].parent_node_z = z1;
-								node_array[f].dist_start = dist + diag_dist_one_step + 0.318;
-								node_array[f].dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 + 1 - z_dest) * (z1 + 1 - z_dest)));
-								node_array[f].dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 + 1 - z_dest) * (z1 + 1 - z_dest))) + dist + diag_dist_one_step + 0.318;
+								temp_node.current_node_x = x2;
+								temp_node.current_node_y = y2;
+								temp_node.current_node_z = z1 + 1;
+								temp_node.parent_node_x = x1;
+								temp_node.parent_node_y = y1;
+								temp_node.parent_node_z = z1;
+								temp_node.dist_start = dist + diag_dist_one_step + 0.318;
+								temp_node.dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 + 1 - z_dest) * (z1 + 1 - z_dest)));
+								temp_node.dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 + 1 - z_dest) * (z1 + 1 - z_dest))) + dist + diag_dist_one_step + 0.318;
+								node_array.push_back(temp_node);
+								i += 1;
 								flag = 1;
 							}
+							else if (f != -1)
+							{
+								if (double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 + 1 - z_dest) * (z1 + 1 - z_dest))) + dist + diag_dist_one_step + 0.318 < node_array[f].dist_heur)
+								{
+									node_array[f].parent_node_x = x1;
+									node_array[f].parent_node_y = y1;
+									node_array[f].parent_node_z = z1;
+									node_array[f].dist_start = dist + diag_dist_one_step + 0.318;
+									node_array[f].dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 + 1 - z_dest) * (z1 + 1 - z_dest)));
+									node_array[f].dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 + 1 - z_dest) * (z1 + 1 - z_dest))) + dist + diag_dist_one_step + 0.318;
+									flag = 1;
+								}
+							}
 						}
-					 }
 					}
 					if (z1 - 1 >= 0)
 					{
-					 if (ogm[x1][y1][z1-1] == 0 && ogm[x2][y2][z1-1] != 0)
-					 {
-					   f = check_search(x2,y2,z1-1);
-					  if (f == -1)
-					  {
-					   		temp_node.current_node_x = x2;
-							temp_node.current_node_y = y2;
-							temp_node.current_node_z = z1 - 1;
-							temp_node.parent_node_x = x1;
-							temp_node.parent_node_y = y1;
-							temp_node.parent_node_z = z1;
-							temp_node.dist_start = dist + diag_dist_one_step + 0.318;
-							temp_node.dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - 1 - z_dest) * (z1 - 1 - z_dest)));
-							temp_node.dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - 1 - z_dest) * (z1 - 1 - z_dest))) + dist + diag_dist_one_step + 0.318;
-							node_array.push_back(temp_node);
-							i += 1;
-							flag = 1;
-					  }
-					  else if(f != -1)
+						if (ogm[x1][y1][z1 - 1] == 0 && ogm[x2][y2][z1 - 1] != 0)
 						{
-						if(double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - 1 - z_dest) * (z1 - 1 - z_dest))) + dist + diag_dist_one_step + 0.318 < node_array[f].dist_heur)
+							f = check_search(x2, y2, z1 - 1);
+							if (f == -1)
 							{
-								node_array[f].parent_node_x = x1;
-								node_array[f].parent_node_y = y1;
-								node_array[f].parent_node_z = z1;
-								node_array[f].dist_start = dist + diag_dist_one_step + 0.318;
-								node_array[f].dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - 1 - z_dest) * (z1 - 1 - z_dest)));
-								node_array[f].dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - 1 - z_dest) * (z1 - 1 - z_dest))) + dist + diag_dist_one_step + 0.318;
+								temp_node.current_node_x = x2;
+								temp_node.current_node_y = y2;
+								temp_node.current_node_z = z1 - 1;
+								temp_node.parent_node_x = x1;
+								temp_node.parent_node_y = y1;
+								temp_node.parent_node_z = z1;
+								temp_node.dist_start = dist + diag_dist_one_step + 0.318;
+								temp_node.dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - 1 - z_dest) * (z1 - 1 - z_dest)));
+								temp_node.dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - 1 - z_dest) * (z1 - 1 - z_dest))) + dist + diag_dist_one_step + 0.318;
+								node_array.push_back(temp_node);
+								i += 1;
 								flag = 1;
 							}
+							else if (f != -1)
+							{
+								if (double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - 1 - z_dest) * (z1 - 1 - z_dest))) + dist + diag_dist_one_step + 0.318 < node_array[f].dist_heur)
+								{
+									node_array[f].parent_node_x = x1;
+									node_array[f].parent_node_y = y1;
+									node_array[f].parent_node_z = z1;
+									node_array[f].dist_start = dist + diag_dist_one_step + 0.318;
+									node_array[f].dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - 1 - z_dest) * (z1 - 1 - z_dest)));
+									node_array[f].dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - 1 - z_dest) * (z1 - 1 - z_dest))) + dist + diag_dist_one_step + 0.318;
+									flag = 1;
+								}
+							}
 						}
-					 }
 					}
 				}
 			}
 			else if (y_dist == 0)
 			{
-				if ((z2 >= 0 && z2 < map_z) && ((x1 - x_dist >=0) && (x1 - x_dist < map_x)))
+				if ((z2 >= 0 && z2 < map_z) && ((x1 - x_dist >= 0) && (x1 - x_dist < map_x)))
 				{
 					if ((ogm[x1 - x_dist][y1][z1] == 0) && (ogm[x1 - x_dist][y1][z2] != 0))
 					{
@@ -1014,9 +1015,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 							node_array.push_back(temp_node);
 							flag = 1;
 						}
-						else if(f != -1)
+						else if (f != -1)
 						{
-						if( double(sqrt(((x1 - x_dist) - x_dest) * (x1 - x_dist - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step < node_array[f].dist_heur)
+							if (double(sqrt(((x1 - x_dist) - x_dest) * (x1 - x_dist - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step < node_array[f].dist_heur)
 							{
 								node_array[f].parent_node_x = x1;
 								node_array[f].parent_node_y = y1;
@@ -1029,7 +1030,7 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						}
 					}
 				}
-				if ((x2 >= 0 && x2 < map_x) && ((z1 - z_dist >=0) && (z1 - z_dist < map_z)))
+				if ((x2 >= 0 && x2 < map_x) && ((z1 - z_dist >= 0) && (z1 - z_dist < map_z)))
 				{
 					if ((ogm[x1][y1][z1 - z_dist] == 0) && ogm[x2][y1][z1 - z_dist] != 0)
 					{
@@ -1049,9 +1050,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 							i += 1;
 							flag = 1;
 						}
-						else if(f != -1)
+						else if (f != -1)
 						{
-						if(double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dist - z_dest) * (z1 - z_dist - z_dest))) + dist + diag_dist_one_step < node_array[f].dist_heur)
+							if (double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dist - z_dest) * (z1 - z_dist - z_dest))) + dist + diag_dist_one_step < node_array[f].dist_heur)
 							{
 								node_array[f].parent_node_x = x1;
 								node_array[f].parent_node_y = y1;
@@ -1064,84 +1065,83 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						}
 					}
 				}
-				if ((x2>=0 && x2 < map_x) && (z2>=0 && z2<map_z))
+				if ((x2 >= 0 && x2 < map_x) && (z2 >= 0 && z2 < map_z))
 				{
 					if (y1 + 1 < map_y)
 					{
-					 if (ogm[x1][y1+1][z1] == 0 && ogm[x2][y1+1][z2] != 0)
-					 {
-					  f = check_search(x2,y1+1,z2);
-					  if (f == -1)
-					  {
-					   		temp_node.current_node_x = x2;
-							temp_node.current_node_y = y1 + 1;
-							temp_node.current_node_z = z2;
-							temp_node.parent_node_x = x1;
-							temp_node.parent_node_y = y1;
-							temp_node.parent_node_z = z1;
-							temp_node.dist_start = dist + diag_dist_one_step + 0.318;
-							temp_node.dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 + 1 - y_dest) * (y1 + 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
-							temp_node.dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 + 1 - y_dest) * (y1 + 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
-							node_array.push_back(temp_node);
-							i += 1;
-							flag = 1;
-					  }
-					  else if(f != -1)
+						if (ogm[x1][y1 + 1][z1] == 0 && ogm[x2][y1 + 1][z2] != 0)
 						{
-						if(double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 + 1 - y_dest) * (y1 + 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318 < node_array[f].dist_heur)
+							f = check_search(x2, y1 + 1, z2);
+							if (f == -1)
 							{
-								node_array[f].parent_node_x = x1;
-								node_array[f].parent_node_y = y1;
-								node_array[f].parent_node_z = z1;
-								node_array[f].dist_start = dist + diag_dist_one_step + 0.318;
-								node_array[f].dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 + 1 - y_dest) * (y1 + 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
-								node_array[f].dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 + 1 - y_dest) * (y1 + 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
+								temp_node.current_node_x = x2;
+								temp_node.current_node_y = y1 + 1;
+								temp_node.current_node_z = z2;
+								temp_node.parent_node_x = x1;
+								temp_node.parent_node_y = y1;
+								temp_node.parent_node_z = z1;
+								temp_node.dist_start = dist + diag_dist_one_step + 0.318;
+								temp_node.dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 + 1 - y_dest) * (y1 + 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
+								temp_node.dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 + 1 - y_dest) * (y1 + 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
+								node_array.push_back(temp_node);
+								i += 1;
 								flag = 1;
 							}
+							else if (f != -1)
+							{
+								if (double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 + 1 - y_dest) * (y1 + 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318 < node_array[f].dist_heur)
+								{
+									node_array[f].parent_node_x = x1;
+									node_array[f].parent_node_y = y1;
+									node_array[f].parent_node_z = z1;
+									node_array[f].dist_start = dist + diag_dist_one_step + 0.318;
+									node_array[f].dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 + 1 - y_dest) * (y1 + 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
+									node_array[f].dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 + 1 - y_dest) * (y1 + 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
+									flag = 1;
+								}
+							}
 						}
-					 }
 					}
 					if (y1 - 1 >= 0)
 					{
-					 if (ogm[x1][y1-1][z1] == 0 && ogm[x2][y1-1][z2] == 1)
-					 {
-					   f = check_search(x2,y1-1,z2);
-					  if (f == -1)
-					  {
-					   		temp_node.current_node_x = x2;
-							temp_node.current_node_y = y1 - 1;
-							temp_node.current_node_z = z2;
-							temp_node.parent_node_x = x1;
-							temp_node.parent_node_y = y1;
-							temp_node.parent_node_z = z1;
-							temp_node.dist_start = dist + diag_dist_one_step + 0.318;
-							temp_node.dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - 1 - y_dest) * (y1 - 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
-							temp_node.dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - 1 - y_dest) * (y1 - 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
-							node_array.push_back(temp_node);
-							i += 1;
-							flag = 1;
-					  }
-					  else if(f != -1)
+						if (ogm[x1][y1 - 1][z1] == 0 && ogm[x2][y1 - 1][z2] == 1)
 						{
-						if( double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - 1 - y_dest) * (y1 - 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318 < node_array[f].dist_heur)
+							f = check_search(x2, y1 - 1, z2);
+							if (f == -1)
 							{
-								node_array[f].parent_node_x = x1;
-								node_array[f].parent_node_y = y1;
-								node_array[f].parent_node_z = z1;
-								node_array[f].dist_start = dist + diag_dist_one_step + 0.318;
-								node_array[f].dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - 1 - y_dest) * (y1 - 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
-								node_array[f].dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - 1 - y_dest) * (y1 - 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
+								temp_node.current_node_x = x2;
+								temp_node.current_node_y = y1 - 1;
+								temp_node.current_node_z = z2;
+								temp_node.parent_node_x = x1;
+								temp_node.parent_node_y = y1;
+								temp_node.parent_node_z = z1;
+								temp_node.dist_start = dist + diag_dist_one_step + 0.318;
+								temp_node.dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - 1 - y_dest) * (y1 - 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
+								temp_node.dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - 1 - y_dest) * (y1 - 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
+								node_array.push_back(temp_node);
+								i += 1;
 								flag = 1;
 							}
+							else if (f != -1)
+							{
+								if (double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - 1 - y_dest) * (y1 - 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318 < node_array[f].dist_heur)
+								{
+									node_array[f].parent_node_x = x1;
+									node_array[f].parent_node_y = y1;
+									node_array[f].parent_node_z = z1;
+									node_array[f].dist_start = dist + diag_dist_one_step + 0.318;
+									node_array[f].dist_dest = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - 1 - y_dest) * (y1 - 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
+									node_array[f].dist_heur = double(sqrt((x2 - x_dest) * (x2 - x_dest) + (y1 - 1 - y_dest) * (y1 - 1 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
+									flag = 1;
+								}
+							}
 						}
-					 }
 					}
 				}
-				
 			}
 			else if (x_dist == 0)
 			{
-				if ((z2 >= 0 && z2 < map_z) && ((y1 - y_dist >=0) && (y1 - y_dist < map_y)))
+				if ((z2 >= 0 && z2 < map_z) && ((y1 - y_dist >= 0) && (y1 - y_dist < map_y)))
 				{
 					if ((ogm[x1][y1 - y_dist][z1] == 0) && (ogm[x1][y1 - y_dist][z2] != 0))
 					{
@@ -1161,9 +1161,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 							node_array.push_back(temp_node);
 							flag = 1;
 						}
-						else if(f != -1)
+						else if (f != -1)
 						{
-						if(double(sqrt(((y1 - y_dist) - y_dest) * (y1 - y_dist - y_dest) + (x1 - x_dest) * (x1 - x_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step < node_array[f].dist_heur)
+							if (double(sqrt(((y1 - y_dist) - y_dest) * (y1 - y_dist - y_dest) + (x1 - x_dest) * (x1 - x_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step < node_array[f].dist_heur)
 							{
 								node_array[f].parent_node_x = x1;
 								node_array[f].parent_node_y = y1;
@@ -1176,7 +1176,7 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						}
 					}
 				}
-				if ((y2 >= 0 && y2 < map_y) && ((z1 - z_dist >=0) && (z1 - z_dist < map_z)))
+				if ((y2 >= 0 && y2 < map_y) && ((z1 - z_dist >= 0) && (z1 - z_dist < map_z)))
 				{
 					if ((ogm[x1][y1][z1 - z_dist] == 0) && ogm[x1][y2][z1 - z_dist] != 0)
 					{
@@ -1196,9 +1196,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 							i += 1;
 							flag = 1;
 						}
-						else if(f != -1)
+						else if (f != -1)
 						{
-						if( double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - z_dist - z_dest) * (z1 - z_dist - z_dest))) + dist + diag_dist_one_step < node_array[f].dist_heur)
+							if (double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z1 - z_dist - z_dest) * (z1 - z_dist - z_dest))) + dist + diag_dist_one_step < node_array[f].dist_heur)
 							{
 								node_array[f].parent_node_x = x1;
 								node_array[f].parent_node_y = y1;
@@ -1211,81 +1211,80 @@ int JumpPointSearch::check_search(int x, int y, int z)
 						}
 					}
 				}
-				if ((y2>=0 && y2<map_y)&&(z2>=0 && z2<map_z))
+				if ((y2 >= 0 && y2 < map_y) && (z2 >= 0 && z2 < map_z))
 				{
-				 
+
 					if (x1 + 1 < map_x)
 					{
-					 if (ogm[x1+1][y1][z1] == 0 && ogm[x1+1][y2][z2] != 0)
-					 {
-					  f = check_search(x1+1,y2,z2);
-					  if (f == -1)
-					  {
-					   		temp_node.current_node_x = x1 + 1;
-							temp_node.current_node_y = y2;
-							temp_node.current_node_z = z2;
-							temp_node.parent_node_x = x1;
-							temp_node.parent_node_y = y1;
-							temp_node.parent_node_z = z1;
-							temp_node.dist_start = dist + diag_dist_one_step + 0.318;
-							temp_node.dist_dest = double(sqrt((x1 + 1 - x_dest) * (x1 + 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
-							temp_node.dist_heur = double(sqrt((x1 + 1 - x_dest) * (x1 + 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
-							node_array.push_back(temp_node);
-							i += 1;
-							flag = 1;
-					  }
-					  else if(f != -1)
+						if (ogm[x1 + 1][y1][z1] == 0 && ogm[x1 + 1][y2][z2] != 0)
 						{
-						if(double(sqrt((x1 + 1 - x_dest) * (x1 + 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318 < node_array[f].dist_heur)
+							f = check_search(x1 + 1, y2, z2);
+							if (f == -1)
 							{
-								node_array[f].parent_node_x = x1;
-								node_array[f].parent_node_y = y1;
-								node_array[f].parent_node_z = z1;
-								node_array[f].dist_start = dist + diag_dist_one_step + 0.318;
-								node_array[f].dist_dest = double(sqrt((x1 + 1 - x_dest) * (x1 + 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
-								node_array[f].dist_heur = double(sqrt((x1 + 1 - x_dest) * (x1 + 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
+								temp_node.current_node_x = x1 + 1;
+								temp_node.current_node_y = y2;
+								temp_node.current_node_z = z2;
+								temp_node.parent_node_x = x1;
+								temp_node.parent_node_y = y1;
+								temp_node.parent_node_z = z1;
+								temp_node.dist_start = dist + diag_dist_one_step + 0.318;
+								temp_node.dist_dest = double(sqrt((x1 + 1 - x_dest) * (x1 + 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
+								temp_node.dist_heur = double(sqrt((x1 + 1 - x_dest) * (x1 + 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
+								node_array.push_back(temp_node);
+								i += 1;
 								flag = 1;
 							}
+							else if (f != -1)
+							{
+								if (double(sqrt((x1 + 1 - x_dest) * (x1 + 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318 < node_array[f].dist_heur)
+								{
+									node_array[f].parent_node_x = x1;
+									node_array[f].parent_node_y = y1;
+									node_array[f].parent_node_z = z1;
+									node_array[f].dist_start = dist + diag_dist_one_step + 0.318;
+									node_array[f].dist_dest = double(sqrt((x1 + 1 - x_dest) * (x1 + 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
+									node_array[f].dist_heur = double(sqrt((x1 + 1 - x_dest) * (x1 + 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
+									flag = 1;
+								}
+							}
 						}
-					 }
 					}
 					if (x1 - 1 >= 0)
 					{
-					 if (ogm[x1-1][y1][z1] == 0 && ogm[x1-1][y2][z2] != 0)
-					 {
-					   f = check_search(x1-1,y2,z2);
-					  if (f == -1)
-					  {
-					   		temp_node.current_node_x = x1 - 1;
-							temp_node.current_node_y = y2;
-							temp_node.current_node_z = z2;
-							temp_node.parent_node_x = x1;
-							temp_node.parent_node_y = y1;
-							temp_node.parent_node_z = z1;
-							temp_node.dist_start = dist + diag_dist_one_step + 0.318;
-							temp_node.dist_dest = double(sqrt((x1 - 1 - x_dest) * (x1 - 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
-							temp_node.dist_heur = double(sqrt((x1 - 1 - x_dest) * (x1 - 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
-							node_array.push_back(temp_node);
-							i += 1;
-							flag = 1;
-					  }
-					  else if(f != -1)
+						if (ogm[x1 - 1][y1][z1] == 0 && ogm[x1 - 1][y2][z2] != 0)
 						{
-						if(double(sqrt((x1 - 1 - x_dest) * (x1 - 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318 < node_array[f].dist_heur)
+							f = check_search(x1 - 1, y2, z2);
+							if (f == -1)
 							{
-								node_array[f].parent_node_x = x1;
-								node_array[f].parent_node_y = y1;
-								node_array[f].parent_node_z = z1;
-								node_array[f].dist_start = dist + diag_dist_one_step + 0.318;
-								node_array[f].dist_dest = double(sqrt((x1 - 1 - x_dest) * (x1 - 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
-								node_array[f].dist_heur = double(sqrt((x1 - 1 - x_dest) * (x1 - 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
+								temp_node.current_node_x = x1 - 1;
+								temp_node.current_node_y = y2;
+								temp_node.current_node_z = z2;
+								temp_node.parent_node_x = x1;
+								temp_node.parent_node_y = y1;
+								temp_node.parent_node_z = z1;
+								temp_node.dist_start = dist + diag_dist_one_step + 0.318;
+								temp_node.dist_dest = double(sqrt((x1 - 1 - x_dest) * (x1 - 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
+								temp_node.dist_heur = double(sqrt((x1 - 1 - x_dest) * (x1 - 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
+								node_array.push_back(temp_node);
+								i += 1;
 								flag = 1;
 							}
+							else if (f != -1)
+							{
+								if (double(sqrt((x1 - 1 - x_dest) * (x1 - 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318 < node_array[f].dist_heur)
+								{
+									node_array[f].parent_node_x = x1;
+									node_array[f].parent_node_y = y1;
+									node_array[f].parent_node_z = z1;
+									node_array[f].dist_start = dist + diag_dist_one_step + 0.318;
+									node_array[f].dist_dest = double(sqrt((x1 - 1 - x_dest) * (x1 - 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest)));
+									node_array[f].dist_heur = double(sqrt((x1 - 1 - x_dest) * (x1 - 1 - x_dest) + (y2 - y_dest) * (y2 - y_dest) + (z2 - z_dest) * (z2 - z_dest))) + dist + diag_dist_one_step + 0.318;
+									flag = 1;
+								}
+							}
 						}
-					 }
 					}
-				
-				} 
+				}
 			}
 			if (flag == 1)
 			{
@@ -1306,20 +1305,20 @@ int JumpPointSearch::check_search(int x, int y, int z)
 					flag = 0;
 					flag1 = 1;
 				}
-				else if(f != -1)
-						{
-						if(dist + diag_dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest))) < node_array[f].dist_heur)
-							{
-								node_array[f].parent_node_x = x_node;
-								node_array[f].parent_node_y = y_node;
-								node_array[f].parent_node_z = z_node;
-								node_array[f].dist_start = dist + diag_dist;
-								node_array[f].dist_dest = double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest)));
-								node_array[f].dist_heur = dist + diag_dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest)));
-								flag = 0;
-								flag1 = 1;
-							}
-						}
+				else if (f != -1)
+				{
+					if (dist + diag_dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest))) < node_array[f].dist_heur)
+					{
+						node_array[f].parent_node_x = x_node;
+						node_array[f].parent_node_y = y_node;
+						node_array[f].parent_node_z = z_node;
+						node_array[f].dist_start = dist + diag_dist;
+						node_array[f].dist_dest = double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest)));
+						node_array[f].dist_heur = dist + diag_dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest)));
+						flag = 0;
+						flag1 = 1;
+					}
+				}
 			}
 			in = i;
 			if (z_dist == 0)
@@ -1352,18 +1351,18 @@ int JumpPointSearch::check_search(int x, int y, int z)
 				node_array.push_back(temp_node);
 				i += 1;
 			}
-			else if(flag1 == 0 && in != i && f != -1)
-						{
-						if(dist + diag_dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest))) < node_array[f].dist_heur)
-							{
-								node_array[f].parent_node_x = x_node;
-								node_array[f].parent_node_y = y_node;
-								node_array[f].parent_node_z = z_node;
-								node_array[f].dist_start = dist + diag_dist;
-								node_array[f].dist_dest = double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest)));
-								node_array[f].dist_heur = dist + diag_dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest)));
-							}
-						}
+			else if (flag1 == 0 && in != i && f != -1)
+			{
+				if (dist + diag_dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest))) < node_array[f].dist_heur)
+				{
+					node_array[f].parent_node_x = x_node;
+					node_array[f].parent_node_y = y_node;
+					node_array[f].parent_node_z = z_node;
+					node_array[f].dist_start = dist + diag_dist;
+					node_array[f].dist_dest = double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest)));
+					node_array[f].dist_heur = dist + diag_dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest)));
+				}
+			}
 		}
 		return i;
 	}
@@ -1391,12 +1390,12 @@ int JumpPointSearch::check_search(int x, int y, int z)
 		Node temp_node{};
 
 		while (true)
-		{	
+		{
 			x1 += x_dist;
 			y1 += y_dist;
 			z1 += z_dist;
 			diag_dist = diag_dist + 1.732;
-			if ((x1<0 || x1>=map_x) || (y1<0 || y1>=map_y) || (z1<0 || z1>=map_z))
+			if ((x1 < 0 || x1 >= map_x) || (y1 < 0 || y1 >= map_y) || (z1 < 0 || z1 >= map_z))
 				break;
 			g = ogm[x1][y1][z1];
 			if (g == 0)
@@ -1417,9 +1416,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 				break;
 			}
 			i = in = node_array.size();
-      		i = search_x(x1,y1,z1,x_dest,y_dest,z_dest,x_dist,dist + diag_dist,i);
-      		i = search_y(x1,y1,z1,x_dest,y_dest,z_dest,y_dist,dist + diag_dist,i);
-      		i = search_z(x1,y1,z1,x_dest,y_dest,z_dest,z_dist,dist + diag_dist,i);
+			i = search_x(x1, y1, z1, x_dest, y_dest, z_dest, x_dist, dist + diag_dist, i);
+			i = search_y(x1, y1, z1, x_dest, y_dest, z_dest, y_dist, dist + diag_dist, i);
+			i = search_z(x1, y1, z1, x_dest, y_dest, z_dest, z_dist, dist + diag_dist, i);
 			i = search_diag_two_dim(x1, y1, z1, x_dest, y_dest, z_dest, x_dist, y_dist, 0, dist + diag_dist, i);
 			i = search_diag_two_dim(x1, y1, z1, x_dest, y_dest, z_dest, x_dist, 0, z_dist, dist + diag_dist, i);
 			i = search_diag_two_dim(x1, y1, z1, x_dest, y_dest, z_dest, 0, y_dist, z_dist, dist + diag_dist, i);
@@ -1438,19 +1437,18 @@ int JumpPointSearch::check_search(int x, int y, int z)
 				node_array.push_back(temp_node);
 				i += 1;
 			}
-			else if(in != i && f != -1)
-						{
-						if(distance + diag_dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest))) < node_array[f].dist_heur)
-							{
-								node_array[f].parent_node_x = x_node;
-								node_array[f].parent_node_y = y_node;
-								node_array[f].parent_node_z = z_node;
-								node_array[f].dist_start = dist + diag_dist;
-								node_array[f].dist_dest = double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest)));
-								node_array[f].dist_heur = distance + diag_dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest)));
-							}
-						}
-
+			else if (in != i && f != -1)
+			{
+				if (distance + diag_dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest))) < node_array[f].dist_heur)
+				{
+					node_array[f].parent_node_x = x_node;
+					node_array[f].parent_node_y = y_node;
+					node_array[f].parent_node_z = z_node;
+					node_array[f].dist_start = dist + diag_dist;
+					node_array[f].dist_dest = double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest)));
+					node_array[f].dist_heur = distance + diag_dist + double(sqrt((x1 - x_dest) * (x1 - x_dest) + (y1 - y_dest) * (y1 - y_dest) + (z1 - z_dest) * (z1 - z_dest)));
+				}
+			}
 		}
 
 		return i;
@@ -1458,9 +1456,9 @@ int JumpPointSearch::check_search(int x, int y, int z)
 
 	void JumpPointSearch::Jump_Point_Search(int start[], int target[])
 	{
-		if(ogm == nullptr)
+		if (ogm == nullptr)
 		{
-			cout<<"Map size is unintialized. Please set the map size first\n";
+			cout << "Map size is unintialized. Please set the map size first\n";
 			return;
 		}
 		node_array.clear();
@@ -1473,13 +1471,14 @@ int JumpPointSearch::check_search(int x, int y, int z)
 		int y_dest = target[1];
 		int z_dest = target[2];
 		if (ogm[x_start][y_start][z_start] == 0)
-		{ cout << "Start is in an occupied cell. Path not possible\n";
-		  return;
-		}
-		if ( ogm[x_dest][y_dest][z_dest] == 0)
 		{
-		  cout << "Destination is in an occupied cell. Path not possible\n";
-		  return;
+			cout << "Start is in an occupied cell. Path not possible\n";
+			return;
+		}
+		if (ogm[x_dest][y_dest][z_dest] == 0)
+		{
+			cout << "Destination is in an occupied cell. Path not possible\n";
+			return;
 		}
 		int iterations = 0;
 		Node temp_node{};
@@ -1498,7 +1497,7 @@ int JumpPointSearch::check_search(int x, int y, int z)
 		double distance = 0;
 		int index = -1;
 		while (iterations < max_iterations && (x_node != x_dest || y_node != y_dest || z_node != z_dest))
-		{ 
+		{
 			for (int i = -1; i <= 1; i += 2)
 			{
 				for (int j = -1; j <= 1; j += 2)
@@ -1510,7 +1509,6 @@ int JumpPointSearch::check_search(int x, int y, int z)
 					node_array_index = search_diag_two_dim(x_node, y_node, z_node, x_dest, y_dest, z_dest, i, j, 0, distance, node_array_index);
 					node_array_index = search_diag_two_dim(x_node, y_node, z_node, x_dest, y_dest, z_dest, i, 0, j, distance, node_array_index);
 					node_array_index = search_diag_two_dim(x_node, y_node, z_node, x_dest, y_dest, z_dest, 0, i, j, distance, node_array_index);
-
 				}
 				node_array_index = search_x(x_node, y_node, z_node, x_dest, y_dest, z_dest, i, distance, node_array_index);
 				node_array_index = search_y(x_node, y_node, z_node, x_dest, y_dest, z_dest, i, distance, node_array_index);
@@ -1519,12 +1517,12 @@ int JumpPointSearch::check_search(int x, int y, int z)
 			index = minimum();
 			if (index == -1)
 			{
-				cout << "\nPath does not exist! Potential nodes exhausted! Iterations: "<<iterations<<" Nodes searched: "<<node_array.size()<<endl;
+				cout << "\nPath does not exist! Potential nodes exhausted! Iterations: " << iterations << " Nodes searched: " << node_array.size() << endl;
 				return;
 			}
 			else if (node_array[index].is_expanded == true)
 			{
-				cout << "\nPath does not exist! Potential nodes exhausted! Iterations: "<<iterations<<" Nodes searched: "<<node_array.size()<<endl;
+				cout << "\nPath does not exist! Potential nodes exhausted! Iterations: " << iterations << " Nodes searched: " << node_array.size() << endl;
 				return;
 			}
 			node_array[index].is_expanded = true;
@@ -1537,7 +1535,7 @@ int JumpPointSearch::check_search(int x, int y, int z)
 		if (iterations < max_iterations)
 		{
 			while (x_node != x_start || y_node != y_start || z_node != z_start)
-			{ 
+			{
 				index = check_search(x_node, y_node, z_node);
 				x_node = node_array[index].parent_node_x;
 				y_node = node_array[index].parent_node_y;
@@ -1549,8 +1547,7 @@ int JumpPointSearch::check_search(int x, int y, int z)
 		}
 		else
 		{
-			cout << "\nPath does not exist! Iteration limit reached! Iterations: "<<iterations<<" Nodes searched: "<<node_array.size()<<endl;
+			cout << "\nPath does not exist! Iteration limit reached! Iterations: " << iterations << " Nodes searched: " << node_array.size() << endl;
 		}
 	}
 }
-
